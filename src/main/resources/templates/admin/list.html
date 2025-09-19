@@ -30,7 +30,7 @@
 		<div class="col mt-4">
 			<div class="card">
 				<div class="card-header">
-					<h2>Danh sách danh mục</h2>
+					<h2 th:text="#{iotstar.value.listCate}"></h2>
 				</div>
 				<div th:if="${message != null}" class="alert alert-primary"
 					role="alert" th:text="${message}"></div>
@@ -66,8 +66,7 @@
 						mục nào</div>
 
 					<div class="mb-2 float-end">
-						<a th:href="@{/admin/categories/add}"
-							class="btn btn-outline-success">Thêm danh mục mới</a>
+						<a th:href="@{/admin/categories/add}" th:text="#{iotstar.value.addCate}" class="btn btn-outline-success"></a>
 					</div>
 				</div>
 			</div>

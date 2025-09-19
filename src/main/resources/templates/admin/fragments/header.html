@@ -16,9 +16,10 @@
 }
 
 .header img {
-	height: 80px;
+	height: 90px; /* Chiều cao 90px */
+	width: auto; /* Rộng tự động theo tỷ lệ */
 	border-radius: 8px;
-	object-fit: cover; /* Đảm bảo hình ảnh không bị méo */
+	object-fit: cover;
 }
 
 .header h2 {
@@ -49,20 +50,22 @@
 	<div th:fragment="header">
 		<header
 			class="header d-flex align-items-center justify-content-between">
-			<div class="d-flex align-items-center">
+			<div class="d-flex align-items-center w-100">
 				<img th:src="@{/images/23110357.png}" alt="Bùi Thanh Tùng"
-					class="me-3" />
-				<h2>Hệ thống Quản lý</h2>
+					class="me-3" style="height: 350px; width: auto; object-fit: cover;">
+
+				<h2 class="flex-grow-1 text-center">23110357 - Bùi Thanh Tùng</h2>
 			</div>
+
 
 			<nav>
 				<ul class="nav">
 					<li class="nav-item"><a class="nav-link"
-						th:href="@{/admin/categories}">Category</a></li>
+						th:href="@{/admin/categories}" style="font-size: 36px">Category</a></li>
 					<li class="nav-item"><a class="nav-link"
-						th:href="@{/admin/categories/search}">Search</a></li>
+						th:href="@{/admin/categories/search}" style="font-size: 36px">Search</a></li>
 					<li class="nav-item"><a class="nav-link"
-						th:href="@{/admin/categories/searchpaging}">Phân trang</a></li>
+						th:href="@{/admin/categories/searchpaging}" style="font-size: 36px">Phân trang</a></li>
 				</ul>
 			</nav>
 		</header>
