@@ -24,14 +24,14 @@ import org.springframework.web.servlet.ModelAndView;
 
 import vn.iotstar.entity.Category;
 import vn.iotstar.model.CategoryModel;
-import vn.iotstar.service.CategoryService;
+import vn.iotstar.service.ICategoryService;
 
 @Controller
 @RequestMapping("admin/categories")
 public class CategoryController {
 
 	@Autowired
-	CategoryService cateSer;
+	ICategoryService cateSer;
 
 	@GetMapping("")
 	public String list(ModelMap model) {
@@ -95,7 +95,7 @@ public class CategoryController {
 	    Page<Category> categoryPage;
 
 	    if (StringUtils.hasText(name)) {
-	        categoryPage = cateSer.findByNameContaining(name, pageable);
+	        categoryPage = cateSer.findByCategoryNameContaining(name, pageable);
 	    } else {
 	        categoryPage = cateSer.findAll(pageable);
 	    }
@@ -126,7 +126,7 @@ public class CategoryController {
 	public String search(ModelMap model,@RequestParam(name="name",required = false) String name) {
 		List<Category> list = null;
 		if(StringUtils.hasText(name)) {
-			list = cateSer.findByNameContaining(name);
+			list = cateSer.findByCategoryNameContaining(name);
 		}
 		else {
 			list = cateSer.findAll();
