@@ -41,4 +41,11 @@ public class WebConfig implements WebMvcConfigurer {
         localeInterceptor.setParamName("lang");
         registry.addInterceptor(localeInterceptor);
     }
+    
+    @Override
+    public void addResourceHandlers(org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("/uploads/**")
+                .addResourceLocations("file:uploads/"); // hoặc file:{đường_dẫn_tuyệt_đối}/
+    }
+
 }
