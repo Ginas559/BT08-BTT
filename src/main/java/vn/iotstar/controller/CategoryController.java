@@ -134,4 +134,10 @@ public class CategoryController {
 		model.addAttribute("categories",list);
 		return "admin/categories/search";
 	}
+	
+	@GetMapping("ajax")
+	public String ajaxPage() {
+	    return "admin/categories/ajax";
+	}
+
 }
