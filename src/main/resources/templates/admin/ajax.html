@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="vi" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Category Ajax Demo</title>
+
+  <!-- Bootstrap CSS -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" />
+
+  <!-- Font Awesome (tuỳ chọn) -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" rel="stylesheet"/>
+
+  <!-- jQuery -->
+  <script src="https://code.jquery.com/jquery-3.6.4.min.js"></script>
+
+  <!-- CSRF (nếu bạn dùng Spring Security) -->
+  <meta name="_csrf" th:if="${_csrf != null}" th:content="${_csrf.token}"/>
+  <meta name="_csrf_header" th:if="${_csrf != null}" th:content="${_csrf.headerName}"/>
+
+  <!-- Tham số URL cho Ajax: dùng cú pháp Thymeleaf -->
+  <script th:inline="javascript">
+    const API = {
+      LIST   : /*[[@{/api/category}]]*/ "/api/category",
+      GET_ONE: /*[[@{/api/category/getCategory}]]*/ "/api/category/getCategory",
+      ADD    : /*[[@{/api/category/addCategory}]]*/ "/api/category/addCategory",
+      UPDATE : /*[[@{/api/category/updateCategory}]]*/ "/api/category/updateCategory",
+      DELETE : /*[[@{/api/category/deleteCategory}]]*/ "/api/category/deleteCategory"
+    };
+    const IMG_BASE = /*[[@{/admin/categories/images/}]]*/ "/admin/categories/images/";
+  </script>
+
+  <style>
+    .table td, .table th { vertical-align: middle; }
+    .modal .form-label { font-weight: 600; }
+    .thumb { width: 70px; height: 70px; object-fit: cover; }
+  </style>
+</head>
+<body class="bg-light">
+
+<div class="container py-4">
+  <div class="d-flex align-items-center justify-content-between mb-3">
+    <h3 class="mb-0">Category (Ajax + REST API)</h3>
+    <button class="btn btn-success" id="btnOpenCreate">
+      <i class="fa fa-plus me-1"></i> Thêm Category (Ajax)
+    </button>
+  </div>
+
+  <div class="card shadow-sm">
+    <div class="card-body p-0">
+      <div class="table-responsive">
+        <table class="table table-striped table-hover mb-0" id="tblCategories">
+          <thead class="table-light">
+          <tr>
+            <th style="width: 80px;">ID</th>
+            <th style="width: 120px;">Icon</th>
+            <th>Tên</th>
+            <th style="width: 180px;">Thao tác</th>
+          </tr>
+          </thead>
+          <tbody>
+          <!-- render bằng JS -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Modal: Create -->
+<div class="modal fade" id="modalCreate" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" id="formCreate" enctype="multipart/form-data">
+      <div class="modal-header">
+        <h5 class="modal-title">Thêm Category</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label" for="create_categoryName">Category Name</label>
+          <input class="form-control" id="create_categoryName" name="categoryName" required />
+        </div>
+        <div class="mb-2">
+          <label class="form-label" for="create_icon">Icon</label>
+          <input type="file" class="form-control" id="create_icon" name="icon" accept="image/*" />
+          <div class="form-text">Có thể bỏ trống, hệ thống sẽ giữ trống icon.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Đóng</button>
+        <button class="btn btn-primary" type="submit">
+          <i class="fa fa-save me-1"></i> Thêm mới
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Modal: Update -->
+<div class="modal fade" id="modalUpdate" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog">
+    <form class="modal-content" id="formUpdate" enctype="multipart/form-data">
+      <div class="modal-header">
+        <h5 class="modal-title">Cập nhật Category</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Đóng"></button>
+      </div>
+      <div class="modal-body">
+        <input type="hidden" id="update_categoryId" name="categoryId" />
+        <div class="mb-3">
+          <label class="form-label">Thông tin hiện tại</label>
+          <div class="border rounded p-2 bg-light">
+            <div id="update_preview_info" class="small text-muted"></div>
+          </div>
+        </div>
+        <div class="mb-3">
+          <label class="form-label" for="update_categoryName">Category Name</label>
+          <input class="form-control" id="update_categoryName" name="categoryName" required />
+        </div>
+        <div class="mb-2">
+          <label class="form-label" for="update_icon">Icon (tùy chọn)</label>
+          <input type="file" class="form-control" id="update_icon" name="icon" accept="image/*" />
+          <div class="form-text">Không chọn file nếu muốn giữ icon cũ.</div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" type="button" data-bs-dismiss="modal">Đóng</button>
+        <button class="btn btn-primary" type="submit">
+          <i class="fa fa-save me-1"></i> Lưu thay đổi
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Bootstrap Bundle (JS) -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js"></script>
+
+<script th:inline="javascript">
+  // --- Nếu có CSRF, tự gắn vào mọi request Ajax ---
+  (function(){
+    var token  = /*[[${_csrf?.token}]]*/ null;
+    var header = /*[[${_csrf?.headerName}]]*/ null;
+    if (token && header) {
+      $(document).ajaxSend(function(e, xhr) { xhr.setRequestHeader(header, token); });
+    }
+  })();
+
+  // ----- Helpers: gỡ bọc {status,message,body} hoặc Page {content} -----
+  function unwrapList(res) {
+    if (Array.isArray(res)) return res;
+    if (res && typeof res === 'object') {
+      if (Array.isArray(res.body)) return res.body;
+      if (res.body && Array.isArray(res.body.content)) return res.body.content;
+      if (Array.isArray(res.content)) return res.content;
+    }
+    return [];
+  }
+  function unwrapOne(res) {
+    if (!res) return null;
+    if (res.body && typeof res.body === 'object') return res.body;
+    return res;
+  }
+  function isOk(res) {
+    return (res && typeof res === 'object' && 'status' in res) ? !!res.status : true;
+  }
+  function getMsg(res, fallback) {
+    return (res && res.message) ? res.message : (fallback || 'Có lỗi xảy ra');
+  }
+
+  // ----- API wrappers -----
+  const api = {
+    list:    () => $.getJSON(API.LIST),
+    getOne:  (id) => $.ajax({ url: API.GET_ONE, type: 'POST', data: {id} }),
+    create:  (fd) => $.ajax({ url: API.ADD,    type: 'POST', data: fd, dataType: 'json', processData: false, contentType: false }),
+    update:  (fd) => $.ajax({ url: API.UPDATE, type: 'PUT',  data: fd, dataType: 'json', processData: false, contentType: false }),
+    remove:  (id) => $.ajax({ url: API.DELETE + '?categoryId=' + encodeURIComponent(id), type: 'DELETE', dataType: 'json' })
+  };
+
+  function buildRow(c) {
+    const imgSrc = c.icon ? (IMG_BASE + c.icon) : '';
+    const imgTag = imgSrc ? `<img class="thumb rounded" src="${imgSrc}" alt="">` : '<span class="text-muted">No icon</span>';
+    return `
+      <tr data-id="${c.categoryId}" data-name="${c.categoryName}" data-icon="${c.icon || ''}">
+        <td>${c.categoryId}</td>
+        <td>${imgTag}</td>
+        <td class="fw-500">${c.categoryName}</td>
+        <td>
+          <button class="btn btn-sm btn-warning me-2 btn-edit"><i class="fa fa-pen"></i></button>
+          <button class="btn btn-sm btn-danger btn-delete"><i class="fa fa-trash"></i></button>
+        </td>
+      </tr>`;
+  }
+
+  function loadCategories() {
+    $('#tblCategories tbody').html(`<tr><td colspan="4" class="text-center py-4 text-muted">Đang tải...</td></tr>`);
+    api.list().done(function (res) {
+      const list = unwrapList(res);
+      if (!list.length) {
+        $('#tblCategories tbody').html(`<tr><td colspan="4" class="text-center py-4 text-muted">Chưa có dữ liệu</td></tr>`);
+        return;
+      }
+      $('#tblCategories tbody').html(list.map(buildRow).join(''));
+    }).fail(function (xhr) {
+      console.error(xhr);
+      $('#tblCategories tbody').html(`<tr><td colspan="4" class="text-center py-4 text-danger">Lỗi tải dữ liệu</td></tr>`);
+    });
+  }
+
+  $(function () {
+    loadCategories();
+
+    // mở modal tạo
+    $('#btnOpenCreate').on('click', function () {
+      $('#create_categoryName').val('');
+      $('#create_icon').val('');
+      new bootstrap.Modal(document.getElementById('modalCreate')).show();
+    });
+
+    // tạo
+    $('#formCreate').on('submit', function (e) {
+      e.preventDefault();
+      const fd = new FormData(this);
+      api.create(fd).done(function (res) {
+        if (!isOk(res)) { alert(getMsg(res, 'Thêm thất bại')); return; }
+        bootstrap.Modal.getInstance(document.getElementById('modalCreate')).hide();
+        loadCategories();
+      }).fail(function (xhr) {
+        alert(xhr?.responseText || 'Thêm thất bại');
+      });
+    });
+
+    // bấm sửa
+    $('#tblCategories').on('click', '.btn-edit', function () {
+      const tr = $(this).closest('tr');
+      const id = tr.data('id'), name = tr.data('name'), icon = tr.data('icon');
+      const imgSrc = icon ? (IMG_BASE + icon) : '';
+      $('#update_preview_info').html(`
+        <div><strong>ID:</strong> ${id}</div>
+        <div><strong>Name:</strong> ${name}</div>
+        <div><strong>Icon:</strong> ${icon ? icon : '<em class="text-muted">No icon</em>'}</div>
+        ${imgSrc ? `<div class="mt-2"><img class="thumb rounded" src="${imgSrc}" /></div>` : ''}
+      `);
+      $('#update_categoryId').val(id);
+      $('#update_categoryName').val(name);
+      $('#update_icon').val('');
+      new bootstrap.Modal(document.getElementById('modalUpdate')).show();
+    });
+
+    // lưu sửa
+    $('#formUpdate').on('submit', function (e) {
+      e.preventDefault();
+      const fd = new FormData(this);
+      api.update(fd).done(function (res) {
+        if (!isOk(res)) { alert(getMsg(res, 'Cập nhật thất bại')); return; }
+        bootstrap.Modal.getInstance(document.getElementById('modalUpdate')).hide();
+        loadCategories();
+      }).fail(function (xhr) {
+        alert(xhr?.responseText || 'Cập nhật thất bại');
+      });
+    });
+
+    // xoá
+    $('#tblCategories').on('click', '.btn-delete', function () {
+      const tr = $(this).closest('tr');
+      const id = tr.data('id');
+      if (!confirm('Bạn chắc chắn muốn xoá category này?')) return;
+      api.remove(id).done(function (res) {
+        if (!isOk(res)) { alert(getMsg(res, 'Xoá thất bại')); return; }
+        tr.fadeOut(200, function () { $(this).remove(); });
+      }).fail(function () {
+        alert('Xoá thất bại');
+      });
+    });
+  });
+</script>
+</body>
+</html>
